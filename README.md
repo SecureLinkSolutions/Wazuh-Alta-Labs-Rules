@@ -50,7 +50,7 @@ Add this block to `/var/ossec/etc/ossec.conf` inside `<ossec_config>`, next to y
   <connection>syslog</connection>
   <port>514</port>
   <protocol>udp</protocol>
-  <allowed-ips>192.168.50.0/24</allowed-ips>
+  <allowed-ips>192.168.X.X/24</allowed-ips>
 </remote>
 ```
 
@@ -81,7 +81,7 @@ Copy `alta_rules.xml` to `/var/ossec/etc/rules/` on the manager, or add it in th
 Run `/var/ossec/bin/wazuh-logtest` and paste:
 
 ```
-Oct 19 21:39:15 hostapd: 5h_2W47W98: AP-STA-CONNECTED d2:de:3f:6d:81:dc
+Oct 19 21:39:15 hostapd: 5h_2W47W98: AP-STA-CONNECTED d2:de:3f:aa:aa:aa
 ```
 
 The output should end with rule 100201 and `**Alert to be generated.`
