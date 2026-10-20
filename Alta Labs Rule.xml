@@ -1,0 +1,111 @@
+<!--
+  Alta Labs custom rules for Wazuh.
+  IDs 100201 to 100230 are reserved for this file, so they cannot clash with Custom-Sysmon-Rules.xml (1001xx).
+  Built from real syslog lines sent by the Route10 (.1), the APs (.168, .178) and the switch (.169).
+-->
+<group name="alta,syslog,">
+
+  <!-- Wi-Fi clients: hostapd on the APs -->
+  <rule id="100201" level="3">
+    <match>AP-STA-CONNECTED</match>
+    <description>Alta AP: Wi-Fi client connected</description>
+  </rule>
+
+  <!-- Only AP-STA-DISCONNECTED is matched, because each disconnect also logs a separate "disassociated" line and that doubled the alerts -->
+  <rule id="100202" level="3">
+    <match>AP-STA-DISCONNECTED</match>
+    <description>Alta AP: Wi-Fi client disconnected</description>
+  </rule>
+
+  <!-- Not seen in your logs yet, but these are standard hostapd and wpa_supplicant messages -->
+  <rule id="100203" level="8">
+    <match>AP-STA-POSSIBLE-PSK-MISMATCH</match>
+    <description>Alta AP: possible wrong Wi-Fi password attempt</description>
+  </rule>
+
+  <rule id="100204" level="5">
+    <match>EAPOL-Key timeout|pre-shared key may be incorrect</match>
+    <description>Alta AP: Wi-Fi handshake timed out or wrong key</description>
+  </rule>
+
+  <!-- Router: DHCP. DISCOVER is only sent by new or rebooting clients, so renewals stay quiet -->
+  <rule id="100205" level="3">
+    <match>DHCPDISCOVER</match>
+    <description>Alta router: device requesting a DHCP lease</description>
+  </rule>
+
+  <!-- Config pushed from Alta Control. Each device logs this once per push -->
+  <rule id="100206" level="4">
+    <match>received config!</match>
+    <description>Alta device: configuration pushed from Alta Control</description>
+  </rule>
+
+  <!-- Wireless mesh uplink (wpa_supplicant on the Study AP) -->
+  <rule id="100207" level="3">
+    <match>CTRL-EVENT-CONNECTED</match>
+    <description>Alta AP: wireless mesh uplink connected</description>
+  </rule>
+
+  <rule id="100208" level="6">
+    <match>CTRL-EVENT-DISCONNECTED</match>
+    <description>Alta AP: wireless mesh uplink lost</description>
+  </rule>
+
+  <rule id="100209" level="6">
+    <match>CTRL-EVENT-ASSOC-REJECT</match>
+    <description>Alta AP: wireless mesh uplink association rejected</description>
+  </rule>
+
+  <rule id="100210" level="3">
+    <match>CTRL-EVENT-CHANNEL-SWITCH</match>
+    <description>Alta AP: radio switched channel</description>
+  </rule>
+
+  <rule id="100211" level="4">
+    <match>PSK/passphrase/config no longer valid</match>
+    <description>Alta AP: client disconnected because Wi-Fi settings changed</description>
+  </rule>
+
+  <!-- Connectivity checks (netd). The line contains the word "failure", so it is attached under Wazuh's generic rule 1002 -->
+  <rule id="100212" level="0">
+    <if_sid>1002</if_sid>
+    <match>netd: Failed, failures</match>
+    <description>Alta device: single connectivity check failure</description>
+  </rule>
+
+  <rule id="100213" level="8" frequency="10" timeframe="60" ignore="300">
+    <if_matched_sid>100212</if_matched_sid>
+    <same_location />
+    <description>Alta device: repeated connectivity check failures, possible outage or reboot</description>
+  </rule>
+
+  <!-- Lost the link to Alta Control -->
+  <rule id="100214" level="5">
+    <match>ping timed out. reconnecting</match>
+    <description>Alta device: lost its connection to Alta Control</description>
+  </rule>
+
+  <rule id="100215" level="5">
+    <if_sid>1002</if_sid>
+    <match>dns lookup failed</match>
+    <description>Alta device: cannot resolve the Alta Control hostname</description>
+  </rule>
+
+  <!-- Uplink type -->
+  <rule id="100216" level="4">
+    <match>Next state: mesh_normal</match>
+    <description>Alta AP: using wireless mesh backhaul</description>
+  </rule>
+
+  <rule id="100217" level="3">
+    <match>Next state: enet_normal</match>
+    <description>Alta device: using wired uplink</description>
+  </rule>
+
+  <!-- Router: Tailscale peer reaching SSH, RDP, SMB or VNC on the LAN through the subnet route -->
+  <rule id="100218" level="4">
+    <regex type="pcre2">Accept: TCP\{100\.\d+\.\d+\.\d+:\d+ &gt; (?:\d{1,3}\.){3}\d{1,3}:(?:22|3389|445|5900)\}</regex>
+    <description>Alta router: Tailscale peer reached a LAN admin port (SSH, RDP, SMB or VNC)</description>
+  </rule>
+
+</group>
